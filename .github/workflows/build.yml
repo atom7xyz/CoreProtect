@@ -56,15 +56,29 @@ jobs:
         with:
           java-version: '21'
           distribution: 'corretto'
-
+          
       - name: Parse version and SHA from tag
         id: parse_tag
         run: |
+          if [[ -z "${GITHUB_REF}" ]]; then
+            echo "Error: GITHUB_REF is not set. Exiting."
+            exit 1
+          fi
           FULL_TAG=${GITHUB_REF#refs/tags/}
           VERSION=${FULL_TAG%-*}
           SHA=${FULL_TAG##*-}
+          echo "Parsed VERSION=$VERSION and SHA=$SHA"
+          if [[ -z "$VERSION" || -z "$SHA" ]]; then
+            echo "Error: VERSION or SHA could not be parsed. Exiting."
+            exit 1
+          fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "SHA=$SHA" >> $GITHUB_ENV
+
+      - name: Debug environment
+        run: |
+          echo "GITHUB_REF=${GITHUB_REF}"
+          echo "FULL_TAG=${GITHUB_REF#refs/tags/}"
 
       - name: Cache Maven packages
         uses: actions/cache@v4
