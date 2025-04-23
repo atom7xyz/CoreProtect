@@ -69,10 +69,21 @@ jobs:
       - name: Build shaded JAR
         run: mvn -B clean package -DskipTests
 
+      # Debug step to verify the files
+      - name: List files in target directory
+        run: ls -l target/
+
       - name: Rename shaded JAR
         run: |
           mkdir -p release
-          mv target/*-shaded.jar release/CoreProtect-${VERSION}-${SHA}.jar
+          # Make sure the JAR file exists and has the correct name
+          ls -al target/
+          if ls target/*-shaded.jar 1> /dev/null 2>&1; then
+            mv target/*-shaded.jar release/CoreProtect-${VERSION}-${SHA}.jar
+          else
+            echo "Error: No shaded JAR file found in target directory!"
+            exit 1
+          fi
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
