@@ -57,20 +57,13 @@ jobs:
           java-version: '21'
           distribution: 'corretto'
           
-      - name: Get version from pom.xml
-        id: get_version
+      - name: Get version from pom.xml, get SHA and set TAG env
+        id: tag
         run: |
           VERSION=$(grep -m 1 '<version>' pom.xml | sed -E 's/.*<version>([^<]+)<\/version>.*/\1/')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Get short commit SHA
-        id: get_sha
-        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-
-      - name: Set TAG env
-        id: set_tag
-        run: |
-          TAG="${VERSION}-${SHORT_SHA}"
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "TAG="${VERSION}-${SHORT_SHA}" >> $GITHUB_ENV
 
       - name: Build shaded JAR
         run: mvn -B clean package -DskipTests
@@ -107,7 +100,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: release/CoreProtect-*-*.jar
+          files: release/*.jar
           name: CoreProtect-${{ env.TAG }}
           generate_release_notes: true
         env:
