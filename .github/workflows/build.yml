@@ -80,15 +80,16 @@ jobs:
           echo "GITHUB_REF=${GITHUB_REF}"
           echo "FULL_TAG=${GITHUB_REF#refs/tags/}"
 
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
       - name: Build shaded JAR
         run: mvn -B clean package -DskipTests
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
       # Debug step to verify the files
       - name: List files in target directory
