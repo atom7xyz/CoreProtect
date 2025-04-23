@@ -84,9 +84,8 @@ jobs:
         run: |
           mkdir -p release
           # Make sure the JAR file exists and has the correct name
-          ls -al target/
-          if ls target/*-shaded.jar 1> /dev/null 2>&1; then
-            mv target/*-shaded.jar release/CoreProtect-${VERSION}-${SHA}.jar
+          if ls target/CoreProtect-*.jar 1> /dev/null 2>&1; then
+            mv target/CoreProtect-*.jar release/CoreProtect-${VERSION}-${SHA}.jar
           else
             echo "Error: No shaded JAR file found in target directory!"
             exit 1
