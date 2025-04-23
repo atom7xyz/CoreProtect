@@ -57,28 +57,20 @@ jobs:
           java-version: '21'
           distribution: 'corretto'
           
-      - name: Parse version and SHA from tag
-        id: parse_tag
+      - name: Get version from pom.xml
+        id: get_version
         run: |
-          if [[ -z "${GITHUB_REF}" ]]; then
-            echo "Error: GITHUB_REF is not set. Exiting."
-            exit 1
-          fi
-          FULL_TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${FULL_TAG%-*}
-          SHA=${FULL_TAG##*-}
-          echo "Parsed VERSION=$VERSION and SHA=$SHA"
-          if [[ -z "$VERSION" || -z "$SHA" ]]; then
-            echo "Error: VERSION or SHA could not be parsed. Exiting."
-            exit 1
-          fi
+          VERSION=$(grep -m 1 '<version>' pom.xml | sed -E 's/.*<version>([^<]+)<\/version>.*/\1/')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "SHA=$SHA" >> $GITHUB_ENV
 
-      - name: Debug environment
+      - name: Get short commit SHA
+        id: get_sha
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Set TAG env
+        id: set_tag
         run: |
-          echo "GITHUB_REF=${GITHUB_REF}"
-          echo "FULL_TAG=${GITHUB_REF#refs/tags/}"
+          TAG="${VERSION}-${SHORT_SHA}"
 
       - name: Build shaded JAR
         run: mvn -B clean package -DskipTests
@@ -100,7 +92,7 @@ jobs:
           mkdir -p release
           # Make sure the JAR file exists and has the correct name
           if ls target/CoreProtect-*.jar 1> /dev/null 2>&1; then
-            mv target/CoreProtect-*.jar release/CoreProtect-${VERSION}-${SHA}.jar
+            mv target/CoreProtect-*.jar release/CoreProtect-${TAG}.jar
           else
             echo "Error: No shaded JAR file found in target directory!"
             exit 1
@@ -116,7 +108,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: release/CoreProtect-*-*.jar
-          name: CoreProtect-${{ env.VERSION }}-${{ env.SHA }}
+          name: CoreProtect-${{ env.TAG }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
